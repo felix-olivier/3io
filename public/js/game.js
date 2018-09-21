@@ -14,15 +14,28 @@ socket.on('connect', function () {
   });
 });
 
+socket.on('2ndJoin', function(data) {
+  // document.getElementById(data.buttonID).style['background-color'] = data.color;
+    jQuery('#turn').html("Game is ready to start! <br>It's " + data.currentPlayer +"'s turn");
+});
+
 socket.on('updateGrid', function(data) {
   document.getElementById(data.buttonID).style['background-color'] = data.color;
-    jQuery('#turn').html("It's " + data.newPlayer + "s turn");
+    jQuery('#turn').html("It's " + data.currentPlayer + "s turn");
 });
 
 socket.on('gameWon', function(data) {
+  document.getElementById(data.buttonID).style['background-color'] = data.color;
+  // document.getElementById(data.buttonID).classList.add('flash-button-red'); // Experimental
+
   var html = '<h3><a href=game.html >' + data.winner +  ' has won. Click to restart</a></h3?'
   // TODO: href does not provide player name and room. Instead refresh state
   jQuery('#turn').html(html);
+});
+
+socket.on('rageQuit', function(data) {
+  jQuery('#turn').html("Your opponent has left..<br> Waiting for a new player");
+
 });
 
 //// **** Event listeners **** ////

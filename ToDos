@@ -1,1 +1,3 @@
- - Style is not loaded until click on mobile
+ - Style is not loaded until click on mobile/heroku
+ - utils/game can combine functions by refactorization
+ - combine io emits updateGrid and Win into 1. Specify win & handling by function parameters.

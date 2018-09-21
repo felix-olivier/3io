@@ -28,14 +28,18 @@ io.on('connection', (socket) => {
 
     if (users.getUserList(params.room).length < 2) {
       socket.join(params.room);
-      // TODO: broadcast to room that game is now ready to be started
+       // TODO: username should be unique
 
       users.removeUser(socket.id); /*User can only join a single room*/
       users.addUser(socket.id, params.name, params.room);
 
-      if (!games[params.room]) games[params.room] = new Game(socket.id);
-      else games[params.room].addPlayer(socket.id);
-      // TODO: render game based on state
+      if (!games[params.room]) games[params.room] = new Game(socket.id, params.name);
+      else {
+        games[params.room].addPlayer(socket.id, params.name);
+        games[params.room].gameStart = true;
+        var currentPlayer = games[params.room].getCurrentPlayer().name;
+        io.to(params.room).emit('2ndJoin', {currentPlayer});
+      }
 
       callback();
     } else {
@@ -48,26 +52,46 @@ io.on('connection', (socket) => {
     var buttonID = button.button;
     var user = users.getUser(socket.id);
     if (user) {
+      var curGame = games[user.room]
+      if (!curGame.wasClickedBefore(buttonID) && curGame.isCorrectPlayer(socket.id) && curGame.gameStart === true) {
+        curGame.updateState(buttonID);
+        curGame.changePlayer();
 
-      if (!games[user.room].wasClickedBefore(buttonID) && games[user.room].isCorrectPlayer(socket.id)) {
-        games[user.room].updateState(buttonID);
-
-        if (games[user.room].isGameWon()) {
-          io.to(user.room).emit('gameWon', {winner: games[user.room].winner});
+        if (curGame.isGameWon()) {
+          io.to(user.room).emit('gameWon', {
+            buttonID,
+            winner: games[user.room].winner,
+            color: curGame.colors[-curGame.currentPlayer]
+          }); // TODO, fill cell with color (opt flash winningCombination)
+        } else if (false && curGame.isGameDraw()) {
+          // TODO
         } else {
           io.to(user.room).emit('updateGrid', {
             buttonID,
-            color: games[user.room].colors[games[user.room].currentPlayer],
-            newPlayer: games[user.room].colors[-games[user.room].currentPlayer]
+            color: curGame.colors[-curGame.currentPlayer],
+            currentPlayer: curGame.getCurrentPlayer().name
           });
         }
-        games[user.room].changePlayer();
       }
     }
   });
+
+
+
+  socket.on('disconnect', () => {
+    var user = users.getUser(socket.id);
+    users.removeUser(socket.id); /*User can only join a single room*/
+    if (user) {
+      io.to(user.room).emit('rageQuit', {test: 'test'});
+      var remainingPlayer = games[user.room].getRemainingPlayer(socket.id);
+      if (remainingPlayer) games[user.room] = new Game(remainingPlayer.socketID, remainingPlayer.name); // TODO else
+    }
+  });
+
+
+
 });
 
-// TODO: on disconnect, clear from user list and emit to room, so it can be displayed 
 
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
