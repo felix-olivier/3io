@@ -11,7 +11,7 @@ var app = express();
 var server = http.createServer(app)
 var io = socketIO(server);
 var users = new Users();
-var games = {};
+var games = {}; // Stores game state per rooms
 
 app.use(express.static(publicPath));
 
@@ -28,12 +28,14 @@ io.on('connection', (socket) => {
 
     if (users.getUserList(params.room).length < 2) {
       socket.join(params.room);
+      // TODO: broadcast to room that game is now ready to be started
 
       users.removeUser(socket.id); /*User can only join a single room*/
       users.addUser(socket.id, params.name, params.room);
 
       if (!games[params.room]) games[params.room] = new Game(socket.id);
       else games[params.room].addPlayer(socket.id);
+      // TODO: render game based on state
 
       callback();
     } else {
@@ -44,37 +46,28 @@ io.on('connection', (socket) => {
 
   socket.on('buttonClicked', (button) => {
     var buttonID = button.button;
-
     var user = users.getUser(socket.id);
-
     if (user) {
-
 
       if (!games[user.room].wasClickedBefore(buttonID) && games[user.room].isCorrectPlayer(socket.id)) {
         games[user.room].updateState(buttonID);
 
-        if (games[user.room].isGameWon()) { /*TODO isGameWon returns error -> fix*/
-          console.log('about to eemit gameWon');
+        if (games[user.room].isGameWon()) {
           io.to(user.room).emit('gameWon', {winner: games[user.room].winner});
-        }
-        else {
+        } else {
           io.to(user.room).emit('updateGrid', {
             buttonID,
             color: games[user.room].colors[games[user.room].currentPlayer],
             newPlayer: games[user.room].colors[-games[user.room].currentPlayer]
           });
         }
-
         games[user.room].changePlayer();
       }
-
-
-
     }
   });
-
 });
 
+// TODO: on disconnect, clear from user list and emit to room, so it can be displayed 
 
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);

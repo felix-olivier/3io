@@ -3,11 +3,11 @@ class Game {
     this.state = [];
     this.currentPlayer = 1;
     this.playerIDs = {1: socketID};
-    this.colors = {
+    this.colors = { /*TODO: Allow choosing a color?*/
       '-1': 'red',
       '1': 'yellow'
     };
-    this.state = {
+    this.state = { /*0 -> not clicked, 1/-1 -> clicked by this.playerIDs[1/-1]*/
       'b1':  0,
       'b2':  0,
       'b3':  0,
@@ -23,7 +23,7 @@ class Game {
       [ 'b1', 'b5', 'b9' ], [ 'b3', 'b5', 'b7' ], // diagonal
       [ 'b1', 'b4', 'b7' ],[ 'b2', 'b5', 'b8' ],[ 'b3', 'b6', 'b9' ] // vertical
     ];
-    this.gameEnd = false
+    this.gameEnd = false;
   }
 
   wasClickedBefore(buttonID) {
@@ -35,12 +35,13 @@ class Game {
   }
 
   isGameWon() {
-    this.winningCombinations.forEach( (combs) =>  {
+    this.winningCombinations.forEach((combination) =>  {
       var tot = 0;
-      combs.forEach((comb) => {
-        tot += this.state[comb];
+      combination.forEach((cell) => {
+        tot += this.state[cell];
       });
 
+      // TODO: return winning combination and flash the cells within the combination
       if (tot === 3 || tot === -3) {
         this.gameEnd = true;
         this.winner = this.colors[tot/3];
@@ -55,11 +56,9 @@ class Game {
   addPlayer(socketID) {
     this.playerIDs[-1] = socketID;
   }
-
   isCorrectPlayer (socketID) {
     return this.playerIDs[this.currentPlayer] === socketID;
   }
-
 }
 
 module.exports = {Game};
