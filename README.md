@@ -1,4 +1,4 @@
-# Node Chat App
+# Match 3 IO
 
 This repository contains code for an online game of match three in which socketIO handles realtime updates to both users. The page is inspired on the chat app project in the 'The Complete Node.js Developer Course'.
 
